@@ -18,8 +18,32 @@ jobs:
           go-version-file: go.mod
       - name: Vet and test
         run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
           go vet ./...
           go test ./...
+      - name: Example (go vet with the analyzer, replay, stamps)
+        run: |
+          go build -o "$RUNNER_TEMP/tribrach-vet" ./cmd/tribrach-vet
+          go build -o "$RUNNER_TEMP/tribrach-go" ./cmd/tribrach-go
+          cd examples/counter
+          go vet -vettool="$RUNNER_TEMP/tribrach-vet" ./...
+          go test ./...
+          "$RUNNER_TEMP/tribrach-go" stamp -n
+
+  conformance-copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the pinned core commit
+        id: core
+        run: echo "rev=$(cat conformance/testdata/CORE_REV)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: tribrach-dev/tribrach
+          ref: ${{ steps.core.outputs.rev }}
+          path: core
+      - name: The vendored cases match core
+        run: diff -r core/tests/conformance conformance/testdata/core --exclude=README.md
 
   dco:
     if: github.event_name == 'pull_request'
