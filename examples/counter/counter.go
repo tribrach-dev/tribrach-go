@@ -14,7 +14,7 @@ const (
 // Step applies one operation, never going above max.
 //
 //tribrach:link Counter.counterStep
-//tribrach:stamp d91fe8d3ff87445f
+//tribrach:stamp c5f9ea973150248a
 func Step(max uint, op Op, n uint) uint {
 	switch op {
 	case Reset:
