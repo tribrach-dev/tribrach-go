@@ -1,0 +1,8 @@
+{ "format": "tribrach.manifest.v1", "package": "drifty",
+  "links": [
+    { "lean": "Shop.add", "owner": "tribrach.go", "symbol": "example.com/drifty.Add", "stamp": "fedcba9876543210" },
+    { "lean": "Shop.remove", "owner": "tribrach.go", "symbol": "example.com/drifty.Remove", "stamp": "0123456789abcdef" },
+    { "lean": "Shop.total", "owner": "tribrach.go", "symbol": "example.com/drifty.Total", "stamp": "0123456789abcdef" },
+    { "lean": "Shop.clear", "owner": "tribrach.go", "symbol": "example.com/drifty.Cart.Clear", "stamp": "0123456789abcdef" },
+    { "lean": "Shop.gone", "owner": "tribrach.go", "symbol": "example.com/drifty.Gone", "stamp": "0123456789abcdef" }
+  ] }
