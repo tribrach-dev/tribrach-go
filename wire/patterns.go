@@ -94,7 +94,7 @@ func relPath(s string) bool {
 	if s == "" || strings.HasPrefix(s, "/") {
 		return false
 	}
-	if !all(s, func(c rune) bool { return c != '\\' && c >= 0x20 && c != ' ' && c != ' ' }) {
+	if !all(s, func(c rune) bool { return c != '\\' && c >= 0x20 && c != '\u2028' && c != '\u2029' }) {
 		return false
 	}
 	for _, seg := range strings.Split(s, "/") {
