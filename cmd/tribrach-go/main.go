@@ -1,6 +1,8 @@
-// Command tribrach-go records Lean stamps next to linked Go functions.
+// Command tribrach-go records Lean stamps next to linked Go functions and
+// generates Go DTOs from core's JSON Schemas.
 //
 //	tribrach-go stamp [-manifest path] [-n] [packages]
+//	tribrach-go gen -pkg name -o file.go [-n] Name=schema.json ...
 //
 // stamp writes or updates the //tribrach:stamp line under each
 // //tribrach:link so it matches the manifest. Run it deliberately, after the
@@ -24,8 +26,12 @@ import (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "gen" {
+		os.Exit(genMain(os.Args[2:]))
+	}
 	if len(os.Args) < 2 || os.Args[1] != "stamp" {
 		fmt.Fprintln(os.Stderr, "usage: tribrach-go stamp [-manifest path] [-n] [packages]")
+		fmt.Fprintln(os.Stderr, "       tribrach-go gen -pkg name -o file.go [-n] Name=schema.json ...")
 		os.Exit(2)
 	}
 	fs := flag.NewFlagSet("stamp", flag.ExitOnError)
