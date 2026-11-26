@@ -21,13 +21,14 @@ jobs:
           test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
           go vet ./...
           go test ./...
-      - name: Example (go vet with the analyzer, replay)
-        working-directory: examples/counter
+      - name: Example (go vet with the analyzer, replay, stamps)
         run: |
-          go build -o "$RUNNER_TEMP/tribrach-vet" github.com/tribrach-dev/tribrach-go/cmd/tribrach-vet
+          go build -o "$RUNNER_TEMP/tribrach-vet" ./cmd/tribrach-vet
+          go build -o "$RUNNER_TEMP/tribrach-go" ./cmd/tribrach-go
+          cd examples/counter
           go vet -vettool="$RUNNER_TEMP/tribrach-vet" ./...
           go test ./...
-          go run github.com/tribrach-dev/tribrach-go/cmd/tribrach-go stamp -n
+          "$RUNNER_TEMP/tribrach-go" stamp -n
 
   conformance-copy:
     runs-on: ubuntu-latest
