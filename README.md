@@ -108,6 +108,9 @@ bug" (see `examples/counter`).
 
 `conformance/` runs the core conformance cases. They are a copy of
 `tribrach/tests/conformance` at the commit in `conformance/testdata/CORE_REV`,
-and CI checks the copy.
+and CI checks the copy. `wire` runs two of them in its own tests:
+`patterns.json`, whose pattern trees `wire` embeds (`wire/patterns.json`)
+and matches with one generic matcher, and `wire.json`, which reads each
+input with `Reader` as its schema says and compares what is written back.
 
 Licence: Apache-2.0. Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md).

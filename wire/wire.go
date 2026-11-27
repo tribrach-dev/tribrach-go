@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 	"strconv"
 	"strings"
@@ -33,22 +34,63 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s: %s: %s", e.Schema, e.Path, e.Reason)
 }
 
-// Parse reads one JSON value, keeping numbers exact.
+// Parse reads one JSON value, keeping numbers exact. As in core, an object
+// with a duplicated key is an error, not "last one wins".
 func Parse(data []byte) (any, error) {
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.UseNumber()
-	var v any
-	if err := d.Decode(&v); err != nil {
+	v, err := readValue(d)
+	if err != nil {
 		return nil, err
 	}
-	if d.More() {
-		return nil, fmt.Errorf("trailing data after the JSON value")
-	}
-	if _, err := d.Token(); err == nil {
+	if _, err := d.Token(); err != io.EOF {
 		return nil, fmt.Errorf("trailing data after the JSON value")
 	}
 	return v, nil
 }
+
+func readValue(d *json.Decoder) (any, error) {
+	tok, err := d.Token()
+	if err != nil {
+		return nil, err
+	}
+	switch tok {
+	case json.Delim('{'):
+		m := map[string]any{}
+		for d.More() {
+			kt, err := d.Token()
+			if err != nil {
+				return nil, err
+			}
+			k := kt.(string)
+			if _, dup := m[k]; dup {
+				return nil, fmt.Errorf("duplicate key %q", k)
+			}
+			if m[k], err = readValue(d); err != nil {
+				return nil, err
+			}
+		}
+		_, err := d.Token() // the closing brace
+		return m, err
+	case json.Delim('['):
+		xs := []any{}
+		for d.More() {
+			x, err := readValue(d)
+			if err != nil {
+				return nil, err
+			}
+			xs = append(xs, x)
+		}
+		_, err := d.Token()
+		return xs, err
+	}
+	return tok, nil
+}
+
+var (
+	decimalPattern, _ = PatternByName("decimal")
+	instantPattern, _ = PatternByName("instant")
+)
 
 // Reader walks a parsed document, recording the first error.
 type Reader struct {
@@ -207,7 +249,7 @@ func (r *Reader) Enum(v any, path string, values ...string) string {
 // Decimal reads a whole number written as a decimal string.
 func (r *Reader) Decimal(v any, path string, b IntBounds) int64 {
 	s, ok := v.(string)
-	if !ok || !decimal(s) {
+	if !ok || !decimalPattern.Check(s) {
 		r.fail(path, "want a whole number as a decimal string")
 		return 0
 	}
@@ -224,7 +266,7 @@ func (r *Reader) Decimal(v any, path string, b IntBounds) int64 {
 // the end of a month roll over, as in core: 2026-02-30 is 2 March.
 func (r *Reader) Instant(v any, path string) time.Time {
 	s, ok := v.(string)
-	if !ok || !instant(s) {
+	if !ok || !instantPattern.Check(s) {
 		r.fail(path, "want an RFC 3339 instant to the second")
 		return time.Time{}
 	}
