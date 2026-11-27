@@ -29,6 +29,13 @@ jobs:
           go vet -vettool="$RUNNER_TEMP/tribrach-vet" ./...
           go test ./...
           "$RUNNER_TEMP/tribrach-go" stamp -n
+      - name: Parking services (generated DTOs, verdicts, exchange replay)
+        working-directory: examples/parking-services
+        run: |
+          go vet ./...
+          go test ./...
+          go generate ./...
+          git diff --exit-code -- . || { echo "TRG0401 contracts.gen.go is out of date; fix: go generate ./... in examples/parking-services"; exit 1; }
 
   conformance-copy:
     runs-on: ubuntu-latest
@@ -44,6 +51,16 @@ jobs:
           path: core
       - name: The vendored cases match core
         run: diff -r core/tests/conformance conformance/testdata/core --exclude=README.md
+      - name: Read the parking example's core commit
+        id: parking
+        run: echo "rev=$(cat examples/parking-services/core/CORE_REV)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: tribrach-dev/tribrach
+          ref: ${{ steps.parking.outputs.rev }}
+          path: core-parking
+      - name: The parking example's exports match core
+        run: diff -r core-parking/examples/dto-parking/exported examples/parking-services/core --exclude=CORE_REV
 
   dco:
     if: github.event_name == 'pull_request'

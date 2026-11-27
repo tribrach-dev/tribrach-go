@@ -66,6 +66,30 @@ tribrach-go stamp        # record the manifest's stamps
 Stamps sit next to each function, never in a shared file, so stamping one
 package can't disturb another.
 
+## Generate DTOs: `tribrach-go gen`
+
+```sh
+tribrach-go gen -pkg contracts -o contracts.gen.go \
+  StartRequest=schemas/meters.start.v1.request.json ...
+```
+
+Writes Go types, `DecodeX` and `EncodeX` for each JSON Schema core exported
+with `Tribrach.Schema`. Decoders read JSON as core's Lean decoders do
+(package `wire`): closed objects, money as decimal strings into `int64`,
+RFC 3339 instants into `time.Time`, tagged unions as sealed interfaces.
+Encoders refuse to write what their own schema would reject. `-n` checks
+the file is up to date. Anything outside the subset core emits is an error,
+never a guess.
+
+| Code | Meaning |
+| --- | --- |
+| TRG0401 | A generated file is out of date with its schemas |
+| TRG0402 | A schema uses something the generator doesn't support |
+| TRG0403 | A pattern isn't one of core's (`Tribrach.Schema.Pat`) |
+
+`examples/parking-services` checks the generated decoders against verdicts
+from Lean and replays exchanges recorded from the Lean model.
+
 ## Replay
 
 ```go
