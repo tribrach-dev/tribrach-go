@@ -262,8 +262,8 @@ func (r *Reader) Decimal(v any, path string, b IntBounds) int64 {
 	return n
 }
 
-// Instant reads an RFC 3339 instant to the second, at any offset. Days past
-// the end of a month roll over, as in core: 2026-02-30 is 2 March.
+// Instant reads an RFC 3339 instant to the second, at any offset. As in
+// core, the day must exist: 2026-02-30 and 2026-02-29 are errors.
 func (r *Reader) Instant(v any, path string) time.Time {
 	s, ok := v.(string)
 	if !ok || !instantPattern.Check(s) {

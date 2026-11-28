@@ -32,10 +32,11 @@ func TestPatternsConformance(t *testing.T) {
 	var file struct {
 		Format string `json:"format"`
 		Cases  []struct {
-			Name   string   `json:"name"`
-			Regex  string   `json:"regex"`
-			Accept []string `json:"accept"`
-			Reject []string `json:"reject"`
+			Name     string   `json:"name"`
+			Regex    string   `json:"regex"`
+			Calendar bool     `json:"calendar"`
+			Accept   []string `json:"accept"`
+			Reject   []string `json:"reject"`
 		} `json:"cases"`
 	}
 	if err := json.Unmarshal(data, &file); err != nil {
@@ -60,9 +61,14 @@ func TestPatternsConformance(t *testing.T) {
 		}
 		// Go's regexp has no lookahead, so a regex using it (relPath) is
 		// checked by its tree alone. Elsewhere, \z is ECMA-262's final $.
-		re, err := regexp.Compile(strings.TrimSuffix(c.Regex, "$") + `\z`)
+		rx, err := regexp.Compile(strings.TrimSuffix(c.Regex, "$") + `\z`)
 		if err != nil {
-			re = nil
+			rx = nil
+		}
+		// A calendar pattern's regex checks the shape; the day is checked apart.
+		var re interface{ MatchString(string) bool }
+		if rx != nil {
+			re = calendarRegex{rx, c.Calendar}
 		}
 		for _, s := range c.Accept {
 			if !p.Check(s) {
@@ -86,4 +92,13 @@ func TestPatternsConformance(t *testing.T) {
 			t.Errorf("TRG0403 wire has pattern %s, which core doesn't; core defines patterns", p.Name)
 		}
 	}
+}
+
+type calendarRegex struct {
+	re       *regexp.Regexp
+	calendar bool
+}
+
+func (c calendarRegex) MatchString(s string) bool {
+	return c.re.MatchString(s) && (!c.calendar || RealDate(s))
 }
